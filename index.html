@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Greca 3D - Tienda</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        #instrucciones { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-family: sans-serif; pointer-events: none; z-index: 10; }
+        body { margin: 0; overflow: hidden; background-color: #444; }
+        #instrucciones { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-family: sans-serif; pointer-events: none; z-index: 10; text-shadow: 1px 1px 2px black; }
     </style>
 </head>
 <body>
-    <div id="instrucciones"><h1>La Greca</h1><p>Usa tu dedo para explorar la tienda</p></div>
+    <div id="instrucciones"><h1>La Greca</h1><p>Gira la cámara para ver las paredes</p></div>
 
     <script type="importmap">
     {
@@ -25,51 +25,55 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // CONFIGURACIÓN BÁSICA
         const escena = new THREE.Scene();
+        escena.background = new THREE.Color(0x87ceeb); // Cielo azul claro para que no esté oscuro
+
         const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const render = new THREE.WebGLRenderer({ antialias: true });
         render.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(render.domElement);
 
-        // 1. ILUMINACIÓN (Para que se vea lo que vamos a poner)
-        const luzAmbiental = new THREE.AmbientLight(0xffffff, 0.7);
-        escena.add(luzAmbiental);
-        const luzPuntual = new THREE.PointLight(0x00ffff, 1, 50);
-        luzPuntual.position.set(0, 10, 0);
-        escena.add(luzPuntual);
+        // 1. LUZ FUERTE (Luz de sol)
+        const luzSol = new THREE.DirectionalLight(0xffffff, 1.5);
+        luzSol.position.set(5, 10, 7);
+        escena.add(luzSol);
+        escena.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-        // 2. EL SUELO (Un plano sólido)
-        const geoSuelo = new THREE.PlaneGeometry(20, 20);
-        const matSuelo = new THREE.MeshStandardMaterial({ color: 0x1a1a1a }); // Gris oscuro
-        const suelo = new THREE.Mesh(geoSuelo, matSuelo);
-        suelo.rotation.x = -Math.PI / 2; // Acostar el suelo
+        // 2. EL SUELO (Color gris claro para que se vea)
+        const suelo = new THREE.Mesh(
+            new THREE.PlaneGeometry(20, 20),
+            new THREE.MeshStandardMaterial({ color: 0xcccccc }) 
+        );
+        suelo.rotation.x = -Math.PI / 2;
         escena.add(suelo);
 
-        // 3. LAS PAREDES (Tres planos verticales)
-        const matPared = new THREE.MeshStandardMaterial({ color: 0x050505 }); // Paredes casi negras
+        // 3. PAREDES (Color blanco para que reflejen luz)
+        const matPared = new THREE.MeshStandardMaterial({ color: 0xffffff });
 
-        // Pared del fondo
         const paredFondo = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
         paredFondo.position.set(0, 5, -10);
         escena.add(paredFondo);
 
-        // Pared izquierda
         const paredIzq = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
         paredIzq.position.set(-10, 5, 0);
         paredIzq.rotation.y = Math.PI / 2;
         escena.add(paredIzq);
 
-        // Pared derecha
         const paredDer = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
         paredDer.position.set(10, 5, 0);
         paredDer.rotation.y = -Math.PI / 2;
         escena.add(paredDer);
 
-        // CÁMARA Y CONTROLES
-        camara.position.set(0, 4, 12);
+        // 4. UNA CAJA DE PRUEBA (Para ver que hay algo en el centro)
+        const caja = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 1, 1),
+            new THREE.MeshStandardMaterial({ color: 0xff0000 }) // Rojo
+        );
+        caja.position.y = 0.5;
+        escena.add(caja);
+
+        camara.position.set(0, 5, 15);
         const controles = new OrbitControls(camara, render.domElement);
-        controles.enableDamping = true;
 
         function animar() {
             requestAnimationFrame(animar);
