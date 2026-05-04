@@ -10,48 +10,42 @@
     </style>
 </head>
 <body>
-    <div id="instrucciones"><h1>La Greca: Tienda 3D</h1><p>Usa el dedo para girar la cámara</p></div>
+    <div id="instrucciones"><h1>La Greca</h1><p>Cargando tienda 3D...</p></div>
 
     <script type="importmap">
-        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
-        import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // 1. ESCENA Y CÁMARA
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 2, 5);
+        const escena = new THREE.Scene();
+        const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const render = new THREE.WebGLRenderer({ antialias: true });
+        render.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(render.domElement);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        // Suelo Neón (Rejilla)
+        const rejilla = new THREE.GridHelper(20, 40, 0x00ffff, 0x004444);
+        escena.add(rejilla);
 
-        // 2. LUZ Y SUELO
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 5, 5);
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0x404040));
+        camara.position.set(0, 5, 10);
+        const controles = new OrbitControls(camara, render.domElement);
 
-        const grid = new THREE.GridHelper(20, 20, 0x00ffff, 0x444444);
-        scene.add(grid);
-
-        // 3. CONTROLES PARA CELULAR
-        const controls = new OrbitControls(camera, renderer.domElement);
-
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
+        function animar() {
+            requestAnimationFrame(animar);
+            controles.update();
+            render.render(escena, camara);
         }
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        
+        document.getElementById('instrucciones').innerHTML = "<h1>La Greca</h1><p>Usa tu dedo para girar la cámara</p>";
+        animar();
     </script>
 </body>
 </html>
