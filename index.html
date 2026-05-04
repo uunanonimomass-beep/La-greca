@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Greca 3D - Carlos Vargas</title>
+    <title>La Greca 3D - Control Total</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #111; touch-action: none; font-family: sans-serif; }
-        #interfaz { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 70px); gap: 15px; z-index: 100; }
-        .boton { width: 70px; height: 70px; background: rgba(255,255,255,0.2); border: 2px solid #0ff; border-radius: 15px; color: #0ff; display: flex; align-items: center; justify-content: center; font-size: 24px; user-select: none; -webkit-tap-highlight-color: transparent; }
+        #interfaz { position: absolute; bottom: 30px; left: 20px; display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; z-index: 100; }
+        .boton { width: 60px; height: 60px; background: rgba(255,255,255,0.2); border: 2px solid #0ff; border-radius: 50%; color: #0ff; display: flex; align-items: center; justify-content: center; font-size: 20px; user-select: none; -webkit-tap-highlight-color: transparent; }
         .boton:active { background: rgba(0,255,255,0.4); }
         #arriba { grid-column: 2; }
         #izq { grid-column: 1; }
         #der { grid-column: 3; }
         #abajo { grid-column: 2; }
-        #info { position: absolute; top: 10px; width: 100%; text-align: center; color: white; pointer-events: none; text-shadow: 2px 2px 4px #000; }
+        #info { position: absolute; top: 10px; width: 100%; text-align: center; color: white; pointer-events: none; text-shadow: 2px 2px 4px #000; z-index: 10; }
     </style>
 </head>
 <body>
-    <div id="info"><h2>LA GRECA 3D</h2><p>Camina por el local</p></div>
+    <div id="info"><h2>LA GRECA 3D</h2><p>Usa los botones para caminar y desliza para mirar</p></div>
     
     <div id="interfaz">
         <div class="boton" id="arriba">▲</div>
@@ -46,76 +46,105 @@
         render.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(render.domElement);
 
-        // LUCES MEJORADAS
-        const luzAmbiental = new THREE.AmbientLight(0xffffff, 1); 
-        escena.add(luzAmbiental);
-        const luzPunto = new THREE.PointLight(0xffffff, 50);
-        luzPunto.position.set(0, 4, 0);
-        escena.add(luzPunto);
+        // ILUMINACIÓN
+        escena.add(new THREE.AmbientLight(0xffffff, 1));
+        const luz = new THREE.PointLight(0xffffff, 60);
+        luz.position.set(0, 4, 0);
+        escena.add(luz);
 
-        // 1. EL LOCAL (Suelo, 4 Paredes y Techo)
+        // LOCAL (Suelo, Paredes, Techo)
         const crearCaja = (w, h, d, x, y, z, color) => {
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mat = new THREE.MeshStandardMaterial({ color: color });
-            const mesh = new THREE.Mesh(geo, mat);
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color }));
             mesh.position.set(x, y, z);
             escena.add(mesh);
-            return mesh;
         };
-
-        // Suelo y Techo
         crearCaja(20, 0.1, 20, 0, 0, 0, 0x444444); // Suelo
         crearCaja(20, 0.1, 20, 0, 5, 0, 0x999999); // Techo
+        crearCaja(20, 5, 0.2, 0, 2.5, -10, 0xcccccc); // Pared Fondo
+        crearCaja(20, 5, 0.2, 0, 2.5, 10, 0xcccccc);  // Pared Frente
+        crearCaja(0.2, 5, 20, -10, 2.5, 0, 0xbbbbbb); // Pared Izq
+        crearCaja(0.2, 5, 20, 10, 2.5, 0, 0xbbbbbb);  // Pared Der
 
-        // Paredes
-        crearCaja(20, 5, 0.2, 0, 2.5, -10, 0xcccccc); // Fondo
-        crearCaja(20, 5, 0.2, 0, 2.5, 10, 0xcccccc);  // Frente
-        crearCaja(0.2, 5, 20, -10, 2.5, 0, 0xbbbbbb); // Izquierda
-        crearCaja(0.2, 5, 20, 10, 2.5, 0, 0xbbbbbb);  // Derecha
-
-        // 2. MUEBLES (Mesas y Estantes)
+        // MUEBLES
         crearCaja(4, 1.2, 2, -5, 0.6, -5, 0x663300); // Mesa 1
         crearCaja(4, 1.2, 2, 5, 0.6, -5, 0x663300);  // Mesa 2
-        crearCaja(8, 4, 1, 0, 2, -9, 0x333333);     // Estante productos
+        crearCaja(8, 4, 1, 0, 2, -9, 0x333333);      // Estante
 
-        // 3. EL ROBOT
+        // ROBOT
         const robot = new THREE.Group();
-        const cuerpoR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1, 0.6), new THREE.MeshStandardMaterial({color: 0x00ff00}));
-        robot.add(cuerpoR);
-        robot.position.set(0, 0.5, -2);
+        robot.add(new THREE.Mesh(new THREE.BoxGeometry(0.8, 1, 0.6), new THREE.MeshStandardMaterial({color: 0x00ff00})));
+        robot.position.set(2, 0.5, -2);
         escena.add(robot);
 
-        // 4. MOVIMIENTO PERSONAJE (Altura 1.70m)
+        // --- LÓGICA DE MOVIMIENTO Y MIRADA ---
         camara.position.set(0, 1.7, 7);
         let mov = { adelante: false, atras: false, izq: false, der: false };
+        
+        // Variables para rotación (Mirar)
+        let lon = 0, lat = 0;
+        let phi = 0, theta = 0;
+        let touchX, touchY;
 
+        // Controles de botones
         const boton = (id, accion) => {
             const el = document.getElementById(id);
-            el.onpointerdown = (e) => { e.preventDefault(); mov[accion] = true; };
-            el.onpointerup = (e) => { e.preventDefault(); mov[accion] = false; };
-            el.onpointerleave = (e) => { e.preventDefault(); mov[accion] = false; };
+            el.onpointerdown = (e) => { e.stopPropagation(); mov[accion] = true; };
+            el.onpointerup = (e) => { e.stopPropagation(); mov[accion] = false; };
         };
         boton('arriba', 'adelante'); boton('abajo', 'atras'); boton('izq', 'izq'); boton('der', 'der');
 
-        let anguloRobot = 0;
+        // Control de mirada (Deslizar en pantalla)
+        window.addEventListener('pointerdown', (e) => {
+            touchX = e.clientX;
+            touchY = e.clientY;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (e.pointerType === 'touch' && (mov.adelante || mov.atras || mov.izq || mov.der)) return; 
+            
+            if (e.buttons > 0 || e.pointerType === 'touch') {
+                const moveX = e.clientX - touchX;
+                const moveY = e.clientY - touchY;
+                
+                lon += moveX * 0.1;
+                lat -= moveY * 0.1;
+                lat = Math.max(-85, Math.min(85, lat)); // No dejar que gire la cabeza 360 grados verticalmente
+
+                touchX = e.clientX;
+                touchY = e.clientY;
+            }
+        });
+
         function animar() {
             requestAnimationFrame(animar);
 
-            const vel = 0.12;
-            if(mov.adelante) camara.position.z -= vel;
-            if(mov.atras) camara.position.z += vel;
-            if(mov.izq) camara.position.x -= vel;
-            if(mov.der) camara.position.x += vel;
+            // Actualizar rotación de cámara
+            phi = THREE.MathUtils.degToRad(90 - lat);
+            theta = THREE.MathUtils.degToRad(lon);
 
-            // Limites para no salir de la tienda
+            const target = new THREE.Vector3();
+            target.setFromSphericalCoords(1, phi, theta).add(camara.position);
+            camara.lookAt(target);
+
+            // Moverse según hacia donde mira la cámara
+            const vel = 0.12;
+            const forward = new THREE.Vector3();
+            camara.getWorldDirection(forward);
+            forward.y = 0; // No volar
+            forward.normalize();
+
+            const right = new THREE.Vector3().crossVectors(forward, camara.up).negate();
+
+            if(mov.adelante) camara.position.addScaledVector(forward, vel);
+            if(mov.atras) camara.position.addScaledVector(forward, -vel);
+            if(mov.izq) camara.position.addScaledVector(right, -vel);
+            if(mov.der) camara.position.addScaledVector(right, vel);
+
+            // Limites paredes
             camara.position.x = Math.max(-9, Math.min(9, camara.position.x));
             camara.position.z = Math.max(-9, Math.min(9, camara.position.z));
 
-            // Robot patrullando
-            robot.position.x += Math.cos(anguloRobot) * 0.05;
-            if(Math.abs(robot.position.x) > 8) anguloRobot += Math.PI;
             robot.rotation.y += 0.02;
-
             render.render(escena, camara);
         }
         animar();
