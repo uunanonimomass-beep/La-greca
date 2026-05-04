@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Greca 3D - Local Ampliado</title>
+    <title>La Greca 3D - Espacio Pro</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #111; touch-action: none; font-family: sans-serif; }
-        #interfaz { position: absolute; bottom: 30px; left: 20px; display: grid; grid-template-columns: repeat(3, 70px); gap: 10px; z-index: 100; }
-        .boton { width: 70px; height: 70px; background: rgba(0, 255, 255, 0.1); border: 2px solid #0ff; border-radius: 50%; color: #0ff; display: flex; align-items: center; justify-content: center; font-size: 24px; user-select: none; -webkit-tap-highlight-color: transparent; }
+        /* Botones centrados abajo */
+        #interfaz { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 75px); gap: 10px; z-index: 100; }
+        .boton { width: 75px; height: 75px; background: rgba(0, 255, 255, 0.1); border: 2px solid #0ff; border-radius: 50%; color: #0ff; display: flex; align-items: center; justify-content: center; font-size: 26px; user-select: none; -webkit-tap-highlight-color: transparent; }
         .boton:active { background: rgba(0,255,255,0.4); }
         #arriba { grid-column: 2; }
         #izq { grid-column: 1; }
@@ -17,7 +18,7 @@
     </style>
 </head>
 <body>
-    <div id="info"><h2>LA GRECA 3D</h2><p>Local Ampliado - Desliza rápido para mirar</p></div>
+    <div id="info"><h2>LA GRECA 3D</h2><p>Giro ultra rápido - Espacio 50x50</p></div>
     
     <div id="interfaz">
         <div class="boton" id="arriba">▲</div>
@@ -38,7 +39,7 @@
         import * as THREE from 'three';
 
         const escena = new THREE.Scene();
-        escena.background = new THREE.Color(0x111111);
+        escena.background = new THREE.Color(0x222222);
 
         const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const render = new THREE.WebGLRenderer({ antialias: true });
@@ -46,72 +47,59 @@
         render.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(render.domElement);
 
-        // --- ILUMINACIÓN MEJORADA ---
-        const luzAmbiente = new THREE.AmbientLight(0xffffff, 1.2); 
-        escena.add(luzAmbiente);
-        
-        const luzPunto1 = new THREE.PointLight(0x00ffff, 100, 40);
-        luzPunto1.position.set(10, 8, 10);
-        escena.add(luzPunto1);
+        // --- ILUMINACIÓN CLARA Y TOTAL (Sin bombillas) ---
+        const luzHemisferica = new THREE.HemisphereLight(0xffffff, 0x444444, 2.5); 
+        escena.add(luzHemisferica);
 
-        const luzPunto2 = new THREE.PointLight(0xffffff, 100, 40);
-        luzPunto2.position.set(-10, 8, -10);
-        escena.add(luzPunto2);
-
-        // --- LOCAL GRANDE (40x40 metros) ---
+        // --- LOCAL GIGANTE (50x50 metros) ---
         const crearCaja = (w, h, d, x, y, z, color) => {
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color }));
             mesh.position.set(x, y, z);
             escena.add(mesh);
         };
 
-        crearCaja(40, 0.2, 40, 0, 0, 0, 0x333333); // Suelo más grande
-        crearCaja(40, 0.2, 40, 0, 10, 0, 0x555555); // Techo más alto
+        crearCaja(50, 0.2, 50, 0, 0, 0, 0x444444); // Suelo 50x50
+        crearCaja(50, 0.2, 50, 0, 10, 0, 0x666666); // Techo
         
-        // Paredes
-        crearCaja(40, 10, 0.5, 0, 5, -20, 0x777777); // Fondo
-        crearCaja(40, 10, 0.5, 0, 5, 20, 0x777777);  // Frente
-        crearCaja(0.5, 10, 40, -20, 5, 0, 0x666666); // Izquierda
-        crearCaja(0.5, 10, 40, 20, 5, 0, 0x666666);  // Derecha
+        // Paredes a 25 metros del centro
+        crearCaja(50, 10, 0.5, 0, 5, -25, 0x888888); // Fondo
+        crearCaja(50, 10, 0.5, 0, 5, 25, 0x888888);  // Frente
+        crearCaja(0.5, 10, 50, -25, 5, 0, 0x777777); // Izquierda
+        crearCaja(0.5, 10, 50, 25, 5, 0, 0x777777);  // Derecha
 
-        // --- MUEBLES DE EXHIBICIÓN ---
-        crearCaja(6, 1.5, 3, -8, 0.75, -8, 0x442200); // Mesa Grande 1
-        crearCaja(6, 1.5, 3, 8, 0.75, -8, 0x442200);  // Mesa Grande 2
-        crearCaja(15, 6, 1.5, 0, 3, -19, 0x222222);   // Estantería Gigante al fondo
+        // --- MUEBLES ---
+        crearCaja(6, 1.5, 3, -10, 0.75, -10, 0x442200); 
+        crearCaja(6, 1.5, 3, 10, 0.75, -10, 0x442200);  
+        crearCaja(15, 6, 1.5, 0, 3, -24, 0x222222);   
 
-        // --- EL ROBOT (Ahora sí camina) ---
+        // --- EL ROBOT ---
         const robot = new THREE.Group();
-        const cuerpoR = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.8), new THREE.MeshStandardMaterial({color: 0x00ff00}));
-        robot.add(cuerpoR);
-        const ojoR = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial({color: 0xffffff}));
-        ojoR.position.set(0, 0.5, 0.45);
-        robot.add(ojoR);
+        robot.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.8), new THREE.MeshStandardMaterial({color: 0x00ff00})));
         robot.position.set(5, 0.75, 5);
         escena.add(robot);
 
         // --- MOVIMIENTO Y MIRADA ---
-        camara.position.set(0, 1.7, 15);
+        camara.position.set(0, 1.7, 20);
         let mov = { adelante: false, atras: false, izq: false, der: false };
         
         let lon = 0, lat = 0;
         let touchX, touchY;
 
-        // Corregido: Izquierda es Izquierda, Derecha es Derecha
         const boton = (id, accion) => {
             const el = document.getElementById(id);
-            el.onpointerdown = (e) => { e.stopPropagation(); mov[accion] = true; };
-            el.onpointerup = (e) => { e.stopPropagation(); mov[accion] = false; };
+            el.onpointerdown = (e) => { e.preventDefault(); mov[accion] = true; };
+            el.onpointerup = (e) => { e.preventDefault(); mov[accion] = false; };
         };
         boton('arriba', 'adelante'); boton('abajo', 'atras'); boton('izq', 'izq'); boton('der', 'der');
 
-        // Mirar alrededor (Sensibilidad aumentada a 0.25)
+        // Mirar alrededor: VELOCIDAD AUMENTADA (+30 puntos de sensibilidad)
         window.addEventListener('pointerdown', (e) => { touchX = e.clientX; touchY = e.clientY; });
         window.addEventListener('pointermove', (e) => {
             if (e.buttons > 0 || e.pointerType === 'touch') {
                 const moveX = e.clientX - touchX;
                 const moveY = e.clientY - touchY;
-                lon += moveX * 0.25; // Más rápido
-                lat -= moveY * 0.25; // Más rápido
+                lon += moveX * 0.45; // Sensibilidad muy alta
+                lat -= moveY * 0.45; 
                 lat = Math.max(-85, Math.min(85, lat));
                 touchX = e.clientX; touchY = e.clientY;
             }
@@ -121,15 +109,13 @@
         function animar() {
             requestAnimationFrame(animar);
 
-            // Rotación de cámara
             const phi = THREE.MathUtils.degToRad(90 - lat);
             const theta = THREE.MathUtils.degToRad(lon);
             const target = new THREE.Vector3();
             target.setFromSphericalCoords(1, phi, theta).add(camara.position);
             camara.lookAt(target);
 
-            // Movimiento relativo
-            const vel = 0.18;
+            const vel = 0.22; // Caminar también un poco más rápido
             const forward = new THREE.Vector3();
             camara.getWorldDirection(forward);
             forward.y = 0; forward.normalize();
@@ -137,18 +123,18 @@
 
             if(mov.adelante) camara.position.addScaledVector(forward, vel);
             if(mov.atras) camara.position.addScaledVector(forward, -vel);
-            if(mov.izq) camara.position.addScaledVector(right, -vel); // Corregido
-            if(mov.der) camara.position.addScaledVector(right, vel);  // Corregido
+            if(mov.izq) camara.position.addScaledVector(right, -vel);
+            if(mov.der) camara.position.addScaledVector(right, vel);
 
-            // Limites del local grande
-            camara.position.x = Math.max(-19, Math.min(19, camara.position.x));
-            camara.position.z = Math.max(-19, Math.min(19, camara.position.z));
+            // Limites del local 50x50
+            camara.position.x = Math.max(-24, Math.min(24, camara.position.x));
+            camara.position.z = Math.max(-24, Math.min(24, camara.position.z));
 
-            // Robot caminando (No solo girando)
-            robot.position.x += Math.cos(anguloRobot) * 0.06;
-            robot.position.z += Math.sin(anguloRobot) * 0.06;
+            // Robot caminando
+            robot.position.x += Math.cos(anguloRobot) * 0.08;
+            robot.position.z += Math.sin(anguloRobot) * 0.08;
             robot.rotation.y = -anguloRobot + Math.PI/2;
-            if(Math.abs(robot.position.x) > 18 || Math.abs(robot.position.z) > 18) {
+            if(Math.abs(robot.position.x) > 23 || Math.abs(robot.position.z) > 23) {
                 anguloRobot += Math.PI / 2 + Math.random();
             }
 
