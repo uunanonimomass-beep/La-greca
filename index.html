@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Greca 3D - Tienda</title>
+    <title>La Greca 3D - Robot</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #444; }
         #instrucciones { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-family: sans-serif; pointer-events: none; z-index: 10; text-shadow: 1px 1px 2px black; }
     </style>
 </head>
 <body>
-    <div id="instrucciones"><h1>La Greca</h1><p>Gira la cámara para ver las paredes</p></div>
+    <div id="instrucciones"><h1>La Greca</h1><p>El robot está explorando la tienda...</p></div>
 
     <script type="importmap">
     {
@@ -26,20 +26,20 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         const escena = new THREE.Scene();
-        escena.background = new THREE.Color(0x87ceeb); // Cielo azul claro para que no esté oscuro
+        escena.background = new THREE.Color(0x87ceeb);
 
         const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const render = new THREE.WebGLRenderer({ antialias: true });
         render.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(render.domElement);
 
-        // 1. LUZ FUERTE (Luz de sol)
+        // LUCES
         const luzSol = new THREE.DirectionalLight(0xffffff, 1.5);
         luzSol.position.set(5, 10, 7);
         escena.add(luzSol);
-        escena.add(new THREE.AmbientLight(0xffffff, 0.5));
+        escena.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-        // 2. EL SUELO (Color gris claro para que se vea)
+        // EL SUELO (Límites: de -10 a 10)
         const suelo = new THREE.Mesh(
             new THREE.PlaneGeometry(20, 20),
             new THREE.MeshStandardMaterial({ color: 0xcccccc }) 
@@ -47,36 +47,66 @@
         suelo.rotation.x = -Math.PI / 2;
         escena.add(suelo);
 
-        // 3. PAREDES (Color blanco para que reflejen luz)
+        // PAREDES
         const matPared = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const pFondo = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
+        pFondo.position.set(0, 5, -10);
+        escena.add(pFondo);
 
-        const paredFondo = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
-        paredFondo.position.set(0, 5, -10);
-        escena.add(paredFondo);
+        const pIzq = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
+        pIzq.position.set(-10, 5, 0);
+        pIzq.rotation.y = Math.PI / 2;
+        escena.add(pIzq);
 
-        const paredIzq = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
-        paredIzq.position.set(-10, 5, 0);
-        paredIzq.rotation.y = Math.PI / 2;
-        escena.add(paredIzq);
+        const pDer = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
+        pDer.position.set(10, 5, 0);
+        pDer.rotation.y = -Math.PI / 2;
+        escena.add(pDer);
 
-        const paredDer = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
-        paredDer.position.set(10, 5, 0);
-        paredDer.rotation.y = -Math.PI / 2;
-        escena.add(paredDer);
+        // CREACIÓN DEL ROBOT (Cuerpo, Cabeza y Ojo)
+        const robot = new THREE.Group();
+        
+        const cuerpo = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 0.8), new THREE.MeshStandardMaterial({color: 0x555555}));
+        cuerpo.position.y = 1;
+        robot.add(cuerpo);
 
-        // 4. UNA CAJA DE PRUEBA (Para ver que hay algo en el centro)
-        const caja = new THREE.Mesh(
-            new THREE.BoxGeometry(1, 1, 1),
-            new THREE.MeshStandardMaterial({ color: 0xff0000 }) // Rojo
-        );
-        caja.position.y = 0.5;
-        escena.add(caja);
+        const cabeza = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.6), new THREE.MeshStandardMaterial({color: 0x999999}));
+        cabeza.position.y = 1.9;
+        robot.add(cabeza);
 
-        camara.position.set(0, 5, 15);
+        const ojo = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x00ffff}));
+        ojo.position.set(0, 1.9, 0.3);
+        robot.add(ojo);
+
+        escena.add(robot);
+
+        // LÓGICA DE MOVIMIENTO
+        let velocidad = 0.05;
+        let angulo = Math.random() * Math.PI * 2; // Dirección aleatoria inicial
+
+        camara.position.set(0, 10, 15);
         const controles = new OrbitControls(camara, render.domElement);
 
         function animar() {
             requestAnimationFrame(animar);
+
+            // Mover el robot hacia adelante según su ángulo
+            robot.position.x += Math.cos(angulo) * velocidad;
+            robot.position.z += Math.sin(angulo) * velocidad;
+            
+            // Hacer que el robot mire hacia donde camina
+            robot.rotation.y = -angulo + Math.PI/2;
+
+            // DETECCIÓN DE PAREDES Y ABISMO (Límites en 9.5 para no traspasar)
+            if (robot.position.x > 9.5 || robot.position.x < -9.5 || robot.position.z > 9.5 || robot.position.z < -9.5) {
+                // Si toca el borde, elige una nueva dirección aleatoria
+                angulo = Math.random() * Math.PI * 2;
+                
+                // Rebotar un poco hacia adentro para no quedarse trabado
+                robot.position.x = Math.max(-9.4, Math.min(9.4, robot.position.x));
+                robot.position.z = Math.max(-9.4, Math.min(9.4, robot.position.z));
+            }
+
             controles.update();
             render.render(escena, camara);
         }
