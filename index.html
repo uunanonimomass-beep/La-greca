@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Greca - Vista Personaje</title>
+    <title>La Greca 3D - Carlos Vargas</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; }
-        #interfaz { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; z-index: 100; }
-        .boton { width: 60px; height: 60px; background: rgba(255,255,255,0.3); border: 2px solid white; border-radius: 10px; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; user-select: none; }
-        .boton:active { background: rgba(0,255,255,0.5); }
+        body { margin: 0; overflow: hidden; background-color: #111; touch-action: none; font-family: sans-serif; }
+        #interfaz { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 70px); gap: 15px; z-index: 100; }
+        .boton { width: 70px; height: 70px; background: rgba(255,255,255,0.2); border: 2px solid #0ff; border-radius: 15px; color: #0ff; display: flex; align-items: center; justify-content: center; font-size: 24px; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .boton:active { background: rgba(0,255,255,0.4); }
         #arriba { grid-column: 2; }
         #izq { grid-column: 1; }
         #der { grid-column: 3; }
         #abajo { grid-column: 2; }
-        #info { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-family: sans-serif; pointer-events: none; }
+        #info { position: absolute; top: 10px; width: 100%; text-align: center; color: white; pointer-events: none; text-shadow: 2px 2px 4px #000; }
     </style>
 </head>
 <body>
-    <div id="info"><h1>La Greca 3D</h1><p>Usa los controles para caminar</p></div>
+    <div id="info"><h2>LA GRECA 3D</h2><p>Camina por el local</p></div>
     
     <div id="interfaz">
         <div class="boton" id="arriba">▲</div>
@@ -38,100 +38,93 @@
         import * as THREE from 'three';
 
         const escena = new THREE.Scene();
+        escena.background = new THREE.Color(0x222222);
+
         const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const render = new THREE.WebGLRenderer({ antialias: true });
         render.setSize(window.innerWidth, window.innerHeight);
+        render.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(render.domElement);
 
-        // 1. EL LOCAL (Suelo, 4 Paredes y Techo)
-        const matGris = new THREE.MeshStandardMaterial({ color: 0x888888 });
-        const matBlanco = new THREE.MeshStandardMaterial({ color: 0xeeeeee, side: THREE.DoubleSide });
-
-        // Suelo
-        const suelo = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), matGris);
-        suelo.rotation.x = -Math.PI / 2;
-        escena.add(suelo);
-
-        // Techo con luces representadas por cuadros brillantes
-        const techo = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), matBlanco);
-        techo.rotation.x = Math.PI / 2;
-        techo.position.y = 5;
-        escena.add(techo);
-
-        // Paredes (Fondo, Frente, Izquierda, Derecha)
-        const crearPared = (w, h, x, y, z, ry = 0) => {
-            const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), matBlanco);
-            p.position.set(x, y, z);
-            p.rotation.y = ry;
-            escena.add(p);
-        };
-        crearPared(20, 5, 0, 2.5, -10); // Fondo
-        crearPared(20, 5, 0, 2.5, 10);  // Frente
-        crearPared(20, 5, -10, 2.5, 0, Math.PI/2); // Izquierda
-        crearPared(20, 5, 10, 2.5, 0, -Math.PI/2); // Derecha
-
-        // 2. LUCES DEL TECHO
-        const luzAmbiental = new THREE.AmbientLight(0xffffff, 0.4);
+        // LUCES MEJORADAS
+        const luzAmbiental = new THREE.AmbientLight(0xffffff, 1); 
         escena.add(luzAmbiental);
+        const luzPunto = new THREE.PointLight(0xffffff, 50);
+        luzPunto.position.set(0, 4, 0);
+        escena.add(luzPunto);
 
-        for(let i = -5; i <= 5; i+=5) {
-            for(let j = -5; j <= 5; j+=5) {
-                const luzLocal = new THREE.PointLight(0xffffff, 15, 10);
-                luzLocal.position.set(i, 4.8, j);
-                escena.add(luzLocal);
-                // Lamparita visual
-                const foco = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 1), new THREE.MeshBasicMaterial({color: 0xffffff}));
-                foco.position.set(i, 4.95, j);
-                escena.add(foco);
-            }
-        }
-
-        // 3. MUEBLES (Obstáculos)
-        const obstaculos = [];
-        const crearMueble = (w, h, d, x, z) => {
-            const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({color: 0x442200}));
-            m.position.set(x, h/2, z);
-            escena.add(m);
-            obstaculos.push(new THREE.Box3().setFromObject(m));
+        // 1. EL LOCAL (Suelo, 4 Paredes y Techo)
+        const crearCaja = (w, h, d, x, y, z, color) => {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            escena.add(mesh);
+            return mesh;
         };
-        crearMueble(4, 1, 2, -5, -5); // Mesa
-        crearMueble(4, 1, 2, 5, -5);  // Mesa
 
-        // 4. EL ROBOT (Sigue ahí)
+        // Suelo y Techo
+        crearCaja(20, 0.1, 20, 0, 0, 0, 0x444444); // Suelo
+        crearCaja(20, 0.1, 20, 0, 5, 0, 0x999999); // Techo
+
+        // Paredes
+        crearCaja(20, 5, 0.2, 0, 2.5, -10, 0xcccccc); // Fondo
+        crearCaja(20, 5, 0.2, 0, 2.5, 10, 0xcccccc);  // Frente
+        crearCaja(0.2, 5, 20, -10, 2.5, 0, 0xbbbbbb); // Izquierda
+        crearCaja(0.2, 5, 20, 10, 2.5, 0, 0xbbbbbb);  // Derecha
+
+        // 2. MUEBLES (Mesas y Estantes)
+        crearCaja(4, 1.2, 2, -5, 0.6, -5, 0x663300); // Mesa 1
+        crearCaja(4, 1.2, 2, 5, 0.6, -5, 0x663300);  // Mesa 2
+        crearCaja(8, 4, 1, 0, 2, -9, 0x333333);     // Estante productos
+
+        // 3. EL ROBOT
         const robot = new THREE.Group();
-        robot.add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.5), new THREE.MeshStandardMaterial({color: 0x555555})));
-        const ojo = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x00ffff}));
-        ojo.position.set(0, 0.4, 0.25);
-        robot.add(ojo);
-        robot.position.y = 0.4;
+        const cuerpoR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1, 0.6), new THREE.MeshStandardMaterial({color: 0x00ff00}));
+        robot.add(cuerpoR);
+        robot.position.set(0, 0.5, -2);
         escena.add(robot);
 
-        // 5. CONTROLES DE PERSONAJE (Altura 1.70m)
-        camara.position.set(0, 1.7, 8);
+        // 4. MOVIMIENTO PERSONAJE (Altura 1.70m)
+        camara.position.set(0, 1.7, 7);
         let mov = { adelante: false, atras: false, izq: false, der: false };
 
-        const setupBoton = (id, prop) => {
-            const b = document.getElementById(id);
-            b.ontouchstart = () => mov[prop] = true;
-            b.ontouchend = () => mov[prop] = false;
+        const boton = (id, accion) => {
+            const el = document.getElementById(id);
+            el.onpointerdown = (e) => { e.preventDefault(); mov[accion] = true; };
+            el.onpointerup = (e) => { e.preventDefault(); mov[accion] = false; };
+            el.onpointerleave = (e) => { e.preventDefault(); mov[accion] = false; };
         };
-        setupBoton('arriba', 'adelante');
-        setupBoton('abajo', 'atras');
-        setupBoton('izq', 'izq');
-        setupBoton('der', 'der');
+        boton('arriba', 'adelante'); boton('abajo', 'atras'); boton('izq', 'izq'); boton('der', 'der');
 
-        // LÓGICA DE ANIMACIÓN
-        let robotAngulo = 0;
-        function animate() {
-            requestAnimationFrame(animate);
+        let anguloRobot = 0;
+        function animar() {
+            requestAnimationFrame(animar);
 
-            // Mover Personaje
-            const v = 0.1;
-            if(mov.adelante) camara.position.z -= v;
-            if(mov.atras) camara.position.z += v;
-            if(mov.izq) camara.position.x -= v;
-            if(mov.der) camara.position.x += v;
+            const vel = 0.12;
+            if(mov.adelante) camara.position.z -= vel;
+            if(mov.atras) camara.position.z += vel;
+            if(mov.izq) camara.position.x -= vel;
+            if(mov.der) camara.position.x += vel;
 
-            // Límites paredes para personaje
-            camara.position.x = Math.max(-9.5, Math.min(
-                
+            // Limites para no salir de la tienda
+            camara.position.x = Math.max(-9, Math.min(9, camara.position.x));
+            camara.position.z = Math.max(-9, Math.min(9, camara.position.z));
+
+            // Robot patrullando
+            robot.position.x += Math.cos(anguloRobot) * 0.05;
+            if(Math.abs(robot.position.x) > 8) anguloRobot += Math.PI;
+            robot.rotation.y += 0.02;
+
+            render.render(escena, camara);
+        }
+        animar();
+
+        window.addEventListener('resize', () => {
+            camara.aspect = window.innerWidth / window.innerHeight;
+            camara.updateProjectionMatrix();
+            render.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
