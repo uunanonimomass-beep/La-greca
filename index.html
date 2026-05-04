@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Greca 3D - Robot Moderno</title>
+    <title>La Greca 3D - Robot Pro</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #eee; touch-action: none; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; background-color: #000; touch-action: none; font-family: sans-serif; }
         #interfaz { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 75px); gap: 10px; z-index: 100; }
-        .boton { width: 75px; height: 75px; background: rgba(255, 255, 255, 0.5); border: 2px solid #0ff; border-radius: 50%; color: #008888; display: flex; align-items: center; justify-content: center; font-size: 26px; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .boton { width: 75px; height: 75px; background: rgba(255, 255, 255, 0.4); border: 2px solid #0ff; border-radius: 50%; color: #008888; display: flex; align-items: center; justify-content: center; font-size: 26px; user-select: none; }
         #arriba { grid-column: 2; } #izq { grid-column: 1; } #der { grid-column: 3; } #abajo { grid-column: 2; }
-        #info { position: absolute; top: 10px; width: 100%; text-align: center; color: #333; pointer-events: none; z-index: 10; font-weight: bold; }
+        #info { position: absolute; top: 10px; width: 100%; text-align: center; color: white; pointer-events: none; z-index: 10; text-shadow: 2px 2px 5px black; }
     </style>
 </head>
 <body>
-    <div id="info"><h1>LA GRECA 3D</h1><p>Tienda Futurista - Manizales</p></div>
+    <div id="info"><h1>LA GRECA 3D</h1><p id="status">Buscando Robot en la red...</p></div>
     <div id="interfaz">
         <div class="boton" id="arriba">▲</div>
         <div class="boton" id="izq">◀</div>
@@ -22,14 +22,20 @@
     </div>
 
     <script type="importmap">
-    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    { 
+        "imports": { 
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        } 
+    }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         const escena = new THREE.Scene();
-        escena.background = new THREE.Color(0xe0f7fa);
+        escena.background = new THREE.Color(0x111111);
 
         const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const render = new THREE.WebGLRenderer({ antialias: true });
@@ -37,138 +43,102 @@
         render.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(render.domElement);
 
-        const luzHemi = new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 2.5);
+        // ILUMINACIÓN POTENTE PARA EL MODELO
+        const luzHemi = new THREE.HemisphereLight(0xffffff, 0x444444, 4);
         escena.add(luzHemi);
+        const luzPunto = new THREE.PointLight(0x00ffff, 100);
+        luzPunto.position.set(0, 5, 5);
+        escena.add(luzPunto);
 
-        const matPiso = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.05, metalness: 0.1 });
-        const matPared = new THREE.MeshStandardMaterial({ color: 0xf0f0f0 });
-        const matNeon = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-        const matRobot = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.7, roughness: 0.3 });
+        // ESCENARIO (50x50)
+        const matPiso = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
+        const matPared = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const suelo = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), matPiso);
+        suelo.rotation.x = -Math.PI/2;
+        escena.add(suelo);
 
-        // ESTRUCTURA LOCAL (50x50)
-        const crearBox = (w, h, d, x, y, z, mat) => {
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-            mesh.position.set(x, y, z);
-            escena.add(mesh);
-        };
-
-        crearBox(50, 0.1, 50, 0, 0, 0, matPiso);
-        crearBox(50, 0.5, 50, 0, 10, 0, matPared);
-        for(let i = -20; i <= 20; i+=10) { crearBox(50, 0.1, 1, 0, 9.7, i, matNeon); }
-
-        crearBox(50, 10, 0.5, 0, 5, -25, matPared);
-        crearBox(50, 0.2, 0.2, 0, 3, -24.7, matNeon);
-        crearBox(50, 10, 0.5, 0, 5, 25, matPared);
-        crearBox(0.5, 10, 50, -25, 5, 0, matPared);
-        crearBox(0.5, 10, 50, 25, 5, 0, matPared);
-
-        // --- ROBOT MODERNO CON BRAZOS Y PIERNAS ---
-        const robot = new THREE.Group();
+        // --- CARGAR ROBOT DESDE ENLACE PÚBLICO ---
+        let mezclador, robotReal;
+        const loader = new GLTFLoader();
         
-        // Cuerpo
-        const tronco = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.6, 4, 8), matRobot);
-        tronco.position.y = 1.2;
-        robot.add(tronco);
+        // Usamos un modelo de muestra de la librería de Three.js (Robot Expressive)
+        const urlRobot = 'https://threejs.org/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
 
-        // Cabeza
-        const cabeza = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), matRobot);
-        cabeza.position.y = 1.8;
-        robot.add(cabeza);
-        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.2), matNeon);
-        visor.position.set(0, 1.85, 0.15);
-        robot.add(visor);
+        loader.load(urlRobot, (gltf) => {
+            robotReal = gltf.scene;
+            robotReal.scale.set(0.4, 0.4, 0.4); 
+            robotReal.position.set(0, 0, 0);
+            escena.add(robotReal);
 
-        // Extremidades
-        const pIzq = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.6, 4, 8), matRobot);
-        pIzq.position.set(-0.18, 0.5, 0);
-        robot.add(pIzq);
-
-        const pDer = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.6, 4, 8), matRobot);
-        pDer.position.set(0.18, 0.5, 0);
-        robot.add(pDer);
-
-        const bIzq = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.5, 4, 8), matRobot);
-        bIzq.position.set(-0.4, 1.3, 0);
-        robot.add(bIzq);
-
-        const bDer = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.5, 4, 8), matRobot);
-        bDer.position.set(0.4, 1.3, 0);
-        robot.add(bDer);
-
-        robot.position.set(5, 0, 5);
-        escena.add(robot);
+            mezclador = new THREE.AnimationMixer(robotReal);
+            // Buscamos la animación de "Walking" por nombre
+            const clip = THREE.AnimationClip.findByName(gltf.animations, 'Walking');
+            if(clip) {
+                mezclador.clipAction(clip).play();
+            } else {
+                mezclador.clipAction(gltf.animations[0]).play();
+            }
+            
+            document.getElementById('status').innerText = "Robot Moderno Conectado";
+        }, undefined, (e) => {
+            document.getElementById('status').innerText = "Error al conectar con el servidor de modelos";
+        });
 
         // CONTROLES
-        camara.position.set(0, 1.7, 20);
+        camara.position.set(0, 1.7, 10);
         let mov = { adelante: false, atras: false, izq: false, der: false };
         let lon = 0, lat = 0, touchX, touchY;
 
-        const boton = (id, accion) => {
-            const el = document.getElementById(id);
-            el.onpointerdown = (e) => { e.preventDefault(); mov[accion] = true; };
-            el.onpointerup = (e) => { e.preventDefault(); mov[accion] = false; };
+        const setupBoton = (id, acc) => {
+            const b = document.getElementById(id);
+            b.onpointerdown = (e) => { e.preventDefault(); mov[acc] = true; };
+            b.onpointerup = (e) => { e.preventDefault(); mov[acc] = false; };
         };
-        boton('arriba', 'adelante'); boton('abajo', 'atras'); boton('izq', 'izq'); boton('der', 'der');
+        setupBoton('arriba', 'adelante'); setupBoton('abajo', 'atras');
+        setupBoton('izq', 'izq'); setupBoton('der', 'der');
 
-        window.addEventListener('pointerdown', (e) => { touchX = e.clientX; touchY = e.clientY; });
         window.addEventListener('pointermove', (e) => {
             if (e.buttons > 0 || e.pointerType === 'touch') {
-                lon += (e.clientX - touchX) * 0.45;
-                lat -= (e.clientY - touchY) * 0.45;
+                lon += (e.clientX - (touchX || e.clientX)) * 0.45;
+                lat -= (e.clientY - (touchY || e.clientY)) * 0.45;
                 lat = Math.max(-85, Math.min(85, lat));
                 touchX = e.clientX; touchY = e.clientY;
             }
         });
 
         let anguloRobot = 0;
-        let tiempo = 0;
+        const reloj = new THREE.Clock();
 
         function animar() {
             requestAnimationFrame(animar);
-            tiempo += 0.15;
+            const delta = reloj.getDelta();
+            if (mezclador) mezclador.update(delta);
 
             const phi = THREE.MathUtils.degToRad(90 - lat);
             const theta = THREE.MathUtils.degToRad(lon);
-            const target = new THREE.Vector3();
-            target.setFromSphericalCoords(1, phi, theta).add(camara.position);
+            const target = new THREE.Vector3().setFromSphericalCoords(1, phi, theta).add(camara.position);
             camara.lookAt(target);
 
-            const vel = 0.22;
-            const forward = new THREE.Vector3();
-            camara.getWorldDirection(forward);
-            forward.y = 0; forward.normalize();
-            const right = new THREE.Vector3().crossVectors(forward, camara.up);
+            const fwd = new THREE.Vector3();
+            camara.getWorldDirection(fwd);
+            fwd.y = 0; fwd.normalize();
+            const rgt = new THREE.Vector3().crossVectors(fwd, camara.up);
 
-            if(mov.adelante) camara.position.addScaledVector(forward, vel);
-            if(mov.atras) camara.position.addScaledVector(forward, -vel);
-            if(mov.izq) camara.position.addScaledVector(right, -vel);
-            if(mov.der) camara.position.addScaledVector(right, vel);
+            if(mov.adelante) camara.position.addScaledVector(fwd, 0.2);
+            if(mov.atras) camara.position.addScaledVector(fwd, -0.2);
+            if(mov.izq) camara.position.addScaledVector(rgt, -0.2);
+            if(mov.der) camara.position.addScaledVector(rgt, 0.2);
 
-            camara.position.x = Math.max(-24, Math.min(24, camara.position.x));
-            camara.position.z = Math.max(-24, Math.min(24, camara.position.z));
-
-            // Animación de caminata del robot
-            pIzq.position.z = Math.sin(tiempo) * 0.25;
-            pDer.position.z = -Math.sin(tiempo) * 0.25;
-            bIzq.position.z = -Math.sin(tiempo) * 0.2;
-            bDer.position.z = Math.sin(tiempo) * 0.2;
-
-            robot.position.x += Math.cos(anguloRobot) * 0.07;
-            robot.position.z += Math.sin(anguloRobot) * 0.07;
-            robot.rotation.y = -anguloRobot + Math.PI/2;
-            if(Math.abs(robot.position.x) > 23 || Math.abs(robot.position.z) > 23) {
-                anguloRobot += Math.PI / 2 + Math.random();
+            if(robotReal) {
+                robotReal.position.x += Math.cos(anguloRobot) * 0.05;
+                robotReal.position.z += Math.sin(anguloRobot) * 0.05;
+                robotReal.rotation.y = -anguloRobot + Math.PI/2;
+                if(Math.abs(robotReal.position.x) > 20 || Math.abs(robotReal.position.z) > 20) anguloRobot += 1.5;
             }
 
             render.render(escena, camara);
         }
         animar();
-
-        window.addEventListener('resize', () => {
-            camara.aspect = window.innerWidth / window.innerHeight;
-            camara.updateProjectionMatrix();
-            render.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
