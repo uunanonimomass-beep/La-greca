@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Greca 3D - Local Claro</title>
+    <title>La Greca 3D - Tienda del Futuro</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #eee; touch-action: none; font-family: sans-serif; }
         #interfaz { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 75px); gap: 10px; z-index: 100; }
@@ -13,7 +13,7 @@
     </style>
 </head>
 <body>
-    <div id="info"><h1>LA GRECA 3D</h1><p id="status">Tienda de Electrodomésticos - Manizales</p></div>
+    <div id="info"><h1>LA GRECA 3D</h1><p id="status">Tienda Futurista de Manizales</p></div>
     <div id="interfaz">
         <div class="boton" id="arriba">▲</div>
         <div class="boton" id="izq">◀</div>
@@ -35,7 +35,7 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         const escena = new THREE.Scene();
-        escena.background = new THREE.Color(0xe0f7fa); // Cielo claro anterior
+        escena.background = new THREE.Color(0xe0f7fa); 
 
         const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const render = new THREE.WebGLRenderer({ antialias: true });
@@ -43,35 +43,60 @@
         render.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(render.domElement);
 
-        // --- ILUMINACIÓN CLARA RESTAURADA ---
         const luzHemi = new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 2.5);
         escena.add(luzHemi);
         const luzDir = new THREE.DirectionalLight(0xffffff, 1);
         luzDir.position.set(5, 10, 5);
         escena.add(luzDir);
 
-        // --- MATERIALES ANTERIORES ---
-        const matPiso = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.2 });
+        // --- MATERIALES ---
+        const matPiso = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
         const matPared = new THREE.MeshStandardMaterial({ color: 0xf0f0f0 });
-        const matNeon = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+        const matNeonBase = new THREE.MeshBasicMaterial({ color: 0x00ffff }); // Cian brillante
+        const matVidrio = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, metalness: 0.9, roughness: 0.05 });
 
-        const crearBox = (w, h, d, x, y, z, mat) => {
+        // ESTRUCTURA LOCAL 50x50
+        const crearBox = (w, h, d, x, y, z, mat, parent=escena) => {
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
             mesh.position.set(x, y, z);
-            escena.add(mesh);
+            parent.add(mesh);
+            return mesh;
         };
 
-        // Estructura 50x50 restaurada
-        crearBox(50, 0.1, 50, 0, 0, 0, matPiso);
-        crearBox(50, 0.5, 50, 0, 8, 0, matPared);
-        for(let i = -20; i <= 20; i+=10) { crearBox(40, 0.1, 1, i, 7.7, 0, matNeon); }
-        crearBox(50, 10, 0.5, 0, 4, -25, matPared);
-        crearBox(50, 0.2, 0.2, 0, 3, -24.7, matNeon);
-        crearBox(50, 10, 0.5, 0, 4, 25, matPared);
-        crearBox(0.5, 10, 50, -25, 4, 0, matPared);
-        crearBox(0.5, 10, 50, 25, 4, 0, matPared);
+        crearBox(50, 0.1, 50, 0, 0, 0, matPiso); // Suelo
+        crearBox(50, 0.5, 50, 0, 8, 0, matPared); // Techo
+        crearBox(50, 10, 0.5, 0, 4, -25, matPared); // Pared fondo
+        crearBox(50, 10, 0.5, 0, 4, 25, matPared);  // Pared frente
+        crearBox(0.5, 10, 50, -25, 4, 0, matPared); // Pared izq
+        crearBox(0.5, 10, 50, 25, 4, 0, matPared);  // Pared der
 
-        // --- CARGA DEL ROBOT PROFESIONAL ---
+        // --- NUEVO: PLATAFORMAS FLOTANTES Y CUBOS DE VIDRIO ---
+        const crearExhibidor = (x, z) => {
+            const grupo = new THREE.Group();
+            grupo.position.set(x, 0, z);
+
+            // 1. Baldosa Flotante (Luz neón por debajo)
+            crearBox(2, 0.1, 2, 0, 0.05, 0, matPiso, grupo); // Parte blanca
+            const neón = crearBox(2.2, 0.02, 2.2, 0, -0.01, 0, matNeonBase, grupo); // Borde neón inferior
+
+            // 2. Soporte central (Vidrio flotante)
+            crearBox(0.1, 0.8, 0.1, 0, 0.5, 0, matVidrio, grupo); 
+
+            // 3. Cubo de Vidrio Transparente (Encima, donde irán los artículos)
+            const cuboVidrio = crearBox(1.5, 1.5, 1.5, 0, 1.5, 0, matVidrio, grupo);
+
+            escena.add(grupo);
+        };
+
+        // DISTRIBUCIÓN EN PASILLOS (Parecido a la imagen)
+        // Pasillo Izquierdo
+        crearExhibidor(-6, -8); crearExhibidor(-6, -4); crearExhibidor(-6, 0); crearExhibidor(-6, 4);
+        // Pasillo Central
+        crearExhibidor(0, -8); crearExhibidor(0, -4); crearExhibidor(0, 0); crearExhibidor(0, 4);
+        // Pasillo Derecho
+        crearExhibidor(6, -8); crearExhibidor(6, -4); crearExhibidor(6, 0); crearExhibidor(6, 4);
+
+        // --- CARGA DEL ROBOT DE PRUEBA (Se mantiene) ---
         let mezclador, robotReal;
         const loader = new GLTFLoader();
         const urlRobot = 'https://threejs.org/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
@@ -81,13 +106,12 @@
             robotReal.scale.set(0.4, 0.4, 0.4); 
             robotReal.position.set(5, 0, 5);
             escena.add(robotReal);
-
             mezclador = new THREE.AnimationMixer(robotReal);
             const clip = THREE.AnimationClip.findByName(gltf.animations, 'Walking');
             if(clip) mezclador.clipAction(clip).play();
         });
 
-        // --- MOVIMIENTO Y MIRADA ---
+        // --- CONTROLES Y MOVIMIENTO ---
         camara.position.set(0, 1.7, 15);
         let mov = { adelante: false, atras: false, izq: false, der: false };
         let lon = 0, lat = 0, touchX, touchY;
