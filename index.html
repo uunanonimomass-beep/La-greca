@@ -3,23 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Greca 3D - Espacio Pro</title>
+    <title>La Greca 3D - Futurista</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #111; touch-action: none; font-family: sans-serif; }
-        /* Botones centrados abajo */
+        body { margin: 0; overflow: hidden; background-color: #eee; touch-action: none; font-family: sans-serif; }
         #interfaz { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 75px); gap: 10px; z-index: 100; }
-        .boton { width: 75px; height: 75px; background: rgba(0, 255, 255, 0.1); border: 2px solid #0ff; border-radius: 50%; color: #0ff; display: flex; align-items: center; justify-content: center; font-size: 26px; user-select: none; -webkit-tap-highlight-color: transparent; }
-        .boton:active { background: rgba(0,255,255,0.4); }
-        #arriba { grid-column: 2; }
-        #izq { grid-column: 1; }
-        #der { grid-column: 3; }
-        #abajo { grid-column: 2; }
-        #info { position: absolute; top: 10px; width: 100%; text-align: center; color: white; pointer-events: none; text-shadow: 2px 2px 4px #000; z-index: 10; }
+        .boton { width: 75px; height: 75px; background: rgba(255, 255, 255, 0.5); border: 2px solid #0ff; border-radius: 15px; color: #008888; display: flex; align-items: center; justify-content: center; font-size: 26px; user-select: none; -webkit-tap-highlight-color: transparent; }
+        #arriba { grid-column: 2; } #izq { grid-column: 1; } #der { grid-column: 3; } #abajo { grid-column: 2; }
+        #info { position: absolute; top: 10px; width: 100%; text-align: center; color: #333; pointer-events: none; z-index: 10; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="info"><h2>LA GRECA 3D</h2><p>Giro ultra rápido - Espacio 50x50</p></div>
-    
+    <div id="info"><h1>LA GRECA 3D</h1><p>Tienda de Electrodomésticos - Manizales</p></div>
     <div id="interfaz">
         <div class="boton" id="arriba">▲</div>
         <div class="boton" id="izq">◀</div>
@@ -28,18 +22,14 @@
     </div>
 
     <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
-        }
-    }
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
 
         const escena = new THREE.Scene();
-        escena.background = new THREE.Color(0x222222);
+        escena.background = new THREE.Color(0xe0f7fa); // Color cielo futurista muy claro
 
         const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const render = new THREE.WebGLRenderer({ antialias: true });
@@ -47,43 +37,56 @@
         render.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(render.domElement);
 
-        // --- ILUMINACIÓN CLARA Y TOTAL (Sin bombillas) ---
-        const luzHemisferica = new THREE.HemisphereLight(0xffffff, 0x444444, 2.5); 
-        escena.add(luzHemisferica);
+        // --- ILUMINACIÓN CENTRO COMERCIAL ---
+        const luzHemi = new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 2);
+        escena.add(luzHemi);
+        const luzDir = new THREE.DirectionalLight(0xffffff, 1);
+        luzDir.position.set(5, 10, 5);
+        escena.add(luzDir);
 
-        // --- LOCAL GIGANTE (50x50 metros) ---
-        const crearCaja = (w, h, d, x, y, z, color) => {
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color }));
+        // --- MATERIALES ESTILO IMAGEN ---
+        const matPiso = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.2 }); // Cerámica brillante
+        const matPared = new THREE.MeshStandardMaterial({ color: 0xf0f0f0 });
+        const matNeon = new THREE.MeshBasicMaterial({ color: 0x00ffff }); // Luz neón cian
+
+        // --- ESTRUCTURA (50x50) ---
+        const crearBox = (w, h, d, x, y, z, mat) => {
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
             mesh.position.set(x, y, z);
             escena.add(mesh);
         };
 
-        crearCaja(50, 0.2, 50, 0, 0, 0, 0x444444); // Suelo 50x50
-        crearCaja(50, 0.2, 50, 0, 10, 0, 0x666666); // Techo
-        
-        // Paredes a 25 metros del centro
-        crearCaja(50, 10, 0.5, 0, 5, -25, 0x888888); // Fondo
-        crearCaja(50, 10, 0.5, 0, 5, 25, 0x888888);  // Frente
-        crearCaja(0.5, 10, 50, -25, 5, 0, 0x777777); // Izquierda
-        crearCaja(0.5, 10, 50, 25, 5, 0, 0x777777);  // Derecha
+        // Suelo (Cerámica)
+        crearBox(50, 0.1, 50, 0, 0, 0, matPiso);
 
-        // --- MUEBLES ---
-        crearCaja(6, 1.5, 3, -10, 0.75, -10, 0x442200); 
-        crearCaja(6, 1.5, 3, 10, 0.75, -10, 0x442200);  
-        crearCaja(15, 6, 1.5, 0, 3, -24, 0x222222);   
+        // Techo (Diseño PVC Moderno con huecos de luz)
+        crearBox(50, 0.5, 50, 0, 8, 0, matPared);
+        for(let i = -20; i <= 20; i+=10) {
+            crearBox(40, 0.1, 1, i, 7.7, 0, matNeon); // Líneas de luz en el techo
+        }
 
-        // --- EL ROBOT ---
+        // Paredes con detalles de neón
+        crearBox(50, 10, 0.5, 0, 4, -25, matPared); // Fondo
+        crearBox(50, 0.2, 0.2, 0, 3, -24.7, matNeon); // Línea de neón en pared fondo
+
+        crearBox(50, 10, 0.5, 0, 4, 25, matPared);  // Frente
+        crearBox(0.5, 10, 50, -25, 4, 0, matPared); // Izq
+        crearBox(0.5, 10, 50, 25, 4, 0, matPared);  // Der
+
+        // --- ROBOT ---
         const robot = new THREE.Group();
-        robot.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.8), new THREE.MeshStandardMaterial({color: 0x00ff00})));
+        const cuerpo = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.5), new THREE.MeshStandardMaterial({color: 0xcccccc}));
+        robot.add(cuerpo);
+        const ojo = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 0.2), matNeon);
+        ojo.position.set(0, 0.5, 0.4);
+        robot.add(ojo);
         robot.position.set(5, 0.75, 5);
         escena.add(robot);
 
         // --- MOVIMIENTO Y MIRADA ---
-        camara.position.set(0, 1.7, 20);
+        camara.position.set(0, 1.7, 15);
         let mov = { adelante: false, atras: false, izq: false, der: false };
-        
-        let lon = 0, lat = 0;
-        let touchX, touchY;
+        let lon = 0, lat = 0, touchX, touchY;
 
         const boton = (id, accion) => {
             const el = document.getElementById(id);
@@ -92,14 +95,11 @@
         };
         boton('arriba', 'adelante'); boton('abajo', 'atras'); boton('izq', 'izq'); boton('der', 'der');
 
-        // Mirar alrededor: VELOCIDAD AUMENTADA (+30 puntos de sensibilidad)
         window.addEventListener('pointerdown', (e) => { touchX = e.clientX; touchY = e.clientY; });
         window.addEventListener('pointermove', (e) => {
             if (e.buttons > 0 || e.pointerType === 'touch') {
-                const moveX = e.clientX - touchX;
-                const moveY = e.clientY - touchY;
-                lon += moveX * 0.45; // Sensibilidad muy alta
-                lat -= moveY * 0.45; 
+                lon += (e.clientX - touchX) * 0.45;
+                lat -= (e.clientY - touchY) * 0.45;
                 lat = Math.max(-85, Math.min(85, lat));
                 touchX = e.clientX; touchY = e.clientY;
             }
@@ -108,14 +108,13 @@
         let anguloRobot = 0;
         function animar() {
             requestAnimationFrame(animar);
-
             const phi = THREE.MathUtils.degToRad(90 - lat);
             const theta = THREE.MathUtils.degToRad(lon);
             const target = new THREE.Vector3();
             target.setFromSphericalCoords(1, phi, theta).add(camara.position);
             camara.lookAt(target);
 
-            const vel = 0.22; // Caminar también un poco más rápido
+            const vel = 0.2;
             const forward = new THREE.Vector3();
             camara.getWorldDirection(forward);
             forward.y = 0; forward.normalize();
@@ -126,17 +125,14 @@
             if(mov.izq) camara.position.addScaledVector(right, -vel);
             if(mov.der) camara.position.addScaledVector(right, vel);
 
-            // Limites del local 50x50
             camara.position.x = Math.max(-24, Math.min(24, camara.position.x));
             camara.position.z = Math.max(-24, Math.min(24, camara.position.z));
 
-            // Robot caminando
-            robot.position.x += Math.cos(anguloRobot) * 0.08;
-            robot.position.z += Math.sin(anguloRobot) * 0.08;
+            // Movimiento robot
+            robot.position.x += Math.cos(anguloRobot) * 0.05;
+            robot.position.z += Math.sin(anguloRobot) * 0.05;
             robot.rotation.y = -anguloRobot + Math.PI/2;
-            if(Math.abs(robot.position.x) > 23 || Math.abs(robot.position.z) > 23) {
-                anguloRobot += Math.PI / 2 + Math.random();
-            }
+            if(Math.abs(robot.position.x) > 20 || Math.abs(robot.position.z) > 20) anguloRobot += Math.PI/2;
 
             render.render(escena, camara);
         }
