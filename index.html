@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Greca 3D - Futurista</title>
+    <title>La Greca 3D - Robot Humanoide</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #eee; touch-action: none; font-family: sans-serif; }
         #interfaz { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 75px); gap: 10px; z-index: 100; }
@@ -13,7 +13,7 @@
     </style>
 </head>
 <body>
-    <div id="info"><h1>LA GRECA 3D</h1><p>Tienda de Electrodomésticos - Manizales</p></div>
+    <div id="info"><h1>LA GRECA 3D</h1><p>Robot Humanoide Explorando</p></div>
     <div id="interfaz">
         <div class="boton" id="arriba">▲</div>
         <div class="boton" id="izq">◀</div>
@@ -29,7 +29,7 @@
         import * as THREE from 'three';
 
         const escena = new THREE.Scene();
-        escena.background = new THREE.Color(0xe0f7fa); // Color cielo futurista muy claro
+        escena.background = new THREE.Color(0xe0f7fa);
 
         const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const render = new THREE.WebGLRenderer({ antialias: true });
@@ -37,50 +37,65 @@
         render.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(render.domElement);
 
-        // --- ILUMINACIÓN CENTRO COMERCIAL ---
         const luzHemi = new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 2);
         escena.add(luzHemi);
         const luzDir = new THREE.DirectionalLight(0xffffff, 1);
         luzDir.position.set(5, 10, 5);
         escena.add(luzDir);
 
-        // --- MATERIALES ESTILO IMAGEN ---
-        const matPiso = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.2 }); // Cerámica brillante
+        const matPiso = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.2 });
         const matPared = new THREE.MeshStandardMaterial({ color: 0xf0f0f0 });
-        const matNeon = new THREE.MeshBasicMaterial({ color: 0x00ffff }); // Luz neón cian
+        const matNeon = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+        const matRobot = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
 
-        // --- ESTRUCTURA (50x50) ---
         const crearBox = (w, h, d, x, y, z, mat) => {
             const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
             mesh.position.set(x, y, z);
             escena.add(mesh);
         };
 
-        // Suelo (Cerámica)
         crearBox(50, 0.1, 50, 0, 0, 0, matPiso);
-
-        // Techo (Diseño PVC Moderno con huecos de luz)
         crearBox(50, 0.5, 50, 0, 8, 0, matPared);
-        for(let i = -20; i <= 20; i+=10) {
-            crearBox(40, 0.1, 1, i, 7.7, 0, matNeon); // Líneas de luz en el techo
-        }
+        for(let i = -20; i <= 20; i+=10) { crearBox(40, 0.1, 1, i, 7.7, 0, matNeon); }
+        crearBox(50, 10, 0.5, 0, 4, -25, matPared);
+        crearBox(50, 0.2, 0.2, 0, 3, -24.7, matNeon);
+        crearBox(50, 10, 0.5, 0, 4, 25, matPared);
+        crearBox(0.5, 10, 50, -25, 4, 0, matPared);
+        crearBox(0.5, 10, 50, 25, 4, 0, matPared);
 
-        // Paredes con detalles de neón
-        crearBox(50, 10, 0.5, 0, 4, -25, matPared); // Fondo
-        crearBox(50, 0.2, 0.2, 0, 3, -24.7, matNeon); // Línea de neón en pared fondo
-
-        crearBox(50, 10, 0.5, 0, 4, 25, matPared);  // Frente
-        crearBox(0.5, 10, 50, -25, 4, 0, matPared); // Izq
-        crearBox(0.5, 10, 50, 25, 4, 0, matPared);  // Der
-
-        // --- ROBOT ---
+        // --- ROBOT MODERNO HUMANOIDE ---
         const robot = new THREE.Group();
-        const cuerpo = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.5), new THREE.MeshStandardMaterial({color: 0xcccccc}));
-        robot.add(cuerpo);
-        const ojo = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 0.2), matNeon);
-        ojo.position.set(0, 0.5, 0.4);
-        robot.add(ojo);
-        robot.position.set(5, 0.75, 5);
+        
+        // Tronco
+        const tronco = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.6, 4, 8), matRobot);
+        tronco.position.y = 1.2;
+        robot.add(tronco);
+
+        // Cabeza
+        const cabeza = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), matRobot);
+        cabeza.position.y = 1.8;
+        robot.add(cabeza);
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.2), matNeon);
+        visor.position.set(0, 1.85, 0.15);
+        robot.add(visor);
+
+        // Brazos
+        const brazoL = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.5, 4, 8), matRobot);
+        brazoL.position.set(-0.45, 1.3, 0);
+        robot.add(brazoL);
+        const brazoR = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.5, 4, 8), matRobot);
+        brazoR.position.set(0.45, 1.3, 0);
+        robot.add(brazoR);
+
+        // Piernas
+        const piernaL = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.6, 4, 8), matRobot);
+        piernaL.position.set(-0.2, 0.5, 0);
+        robot.add(piernaL);
+        const piernaR = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.6, 4, 8), matRobot);
+        piernaR.position.set(0.2, 0.5, 0);
+        robot.add(piernaR);
+
+        robot.position.set(5, 0, 5);
         escena.add(robot);
 
         // --- MOVIMIENTO Y MIRADA ---
@@ -106,8 +121,12 @@
         });
 
         let anguloRobot = 0;
+        let tiempo = 0;
+
         function animar() {
             requestAnimationFrame(animar);
+            tiempo += 0.1;
+
             const phi = THREE.MathUtils.degToRad(90 - lat);
             const theta = THREE.MathUtils.degToRad(lon);
             const target = new THREE.Vector3();
@@ -128,7 +147,13 @@
             camara.position.x = Math.max(-24, Math.min(24, camara.position.x));
             camara.position.z = Math.max(-24, Math.min(24, camara.position.z));
 
-            // Movimiento robot
+            // Animación de caminar del robot (Piernas y Brazos)
+            piernaL.position.z = Math.sin(tiempo) * 0.2;
+            piernaR.position.z = -Math.sin(tiempo) * 0.2;
+            brazoL.position.z = -Math.sin(tiempo) * 0.2;
+            brazoR.position.z = Math.sin(tiempo) * 0.2;
+
+            // Movimiento robot por el local
             robot.position.x += Math.cos(anguloRobot) * 0.05;
             robot.position.z += Math.sin(anguloRobot) * 0.05;
             robot.rotation.y = -anguloRobot + Math.PI/2;
