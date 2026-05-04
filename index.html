@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Greca - Tienda Virtual</title>
+    <style>
+        body { margin: 0; background-color: #000; color: white; font-family: sans-serif; overflow: hidden; }
+        #interfaz { position: absolute; top: 20px; width: 100%; text-align: center; z-index: 10; }
+    </style>
+</head>
+<body>
+    <div id="interfaz">
+        <h1>La Greca</h1>
+        <p>Cargando tienda 3D...</p>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        console.log("El motor está listo");
+    </script>
+</body>
+</html>
