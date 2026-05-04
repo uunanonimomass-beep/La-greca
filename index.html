@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Greca 3D - Robot</title>
+    <title>La Greca 3D - Tienda Equipada</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #444; }
+        body { margin: 0; overflow: hidden; background-color: #000; }
         #instrucciones { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-family: sans-serif; pointer-events: none; z-index: 10; text-shadow: 1px 1px 2px black; }
     </style>
 </head>
 <body>
-    <div id="instrucciones"><h1>La Greca</h1><p>El robot está explorando la tienda...</p></div>
+    <div id="instrucciones"><h1>La Greca</h1><p>Tienda equipada con obstáculos para el robot</p></div>
 
     <script type="importmap">
     {
@@ -34,77 +34,102 @@
         document.body.appendChild(render.domElement);
 
         // LUCES
-        const luzSol = new THREE.DirectionalLight(0xffffff, 1.5);
+        escena.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const luzSol = new THREE.DirectionalLight(0xffffff, 1);
         luzSol.position.set(5, 10, 7);
         escena.add(luzSol);
-        escena.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-        // EL SUELO (Límites: de -10 a 10)
-        const suelo = new THREE.Mesh(
-            new THREE.PlaneGeometry(20, 20),
-            new THREE.MeshStandardMaterial({ color: 0xcccccc }) 
-        );
+        // ESCENARIO
+        const suelo = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
         suelo.rotation.x = -Math.PI / 2;
         escena.add(suelo);
 
-        // PAREDES
         const matPared = new THREE.MeshStandardMaterial({ color: 0xffffff });
         const pFondo = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
         pFondo.position.set(0, 5, -10);
         escena.add(pFondo);
 
-        const pIzq = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
-        pIzq.position.set(-10, 5, 0);
-        pIzq.rotation.y = Math.PI / 2;
-        escena.add(pIzq);
+        // LISTA DE OBSTÁCULOS PARA EL ROBOT
+        const obstaculos = [];
 
-        const pDer = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
-        pDer.position.set(10, 5, 0);
-        pDer.rotation.y = -Math.PI / 2;
-        escena.add(pDer);
+        function crearMueble(ancho, alto, profundo, x, z, color, esTele = false) {
+            const geo = new THREE.BoxGeometry(ancho, alto, profundo);
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const mueble = new THREE.Mesh(geo, mat);
+            mueble.position.set(x, alto / 2, z);
+            escena.add(mueble);
+            
+            // Guardamos los límites del mueble para que el robot los reconozca
+            obstaculos.push({
+                xMin: x - ancho/2 - 0.6,
+                xMax: x + ancho/2 + 0.6,
+                zMin: z - profundo/2 - 0.6,
+                zMax: z + profundo/2 + 0.6
+            });
 
-        // CREACIÓN DEL ROBOT (Cuerpo, Cabeza y Ojo)
-        const robot = new THREE.Group();
+            if(esTele) {
+                const pantallaGeo = new THREE.BoxGeometry(ancho * 0.9, alto * 0.8, 0.1);
+                const pantallaMat = new THREE.MeshBasicMaterial({color: 0x000000});
+                const pantalla = new THREE.Mesh(pantallaGeo, pantallaMat);
+                pantalla.position.set(x, alto/2, z + profundo/2 + 0.01);
+                escena.add(pantalla);
+            }
+        }
+
+        // COLOCAR MUEBLES
+        crearMueble(4, 1.5, 2, -5, -5, 0x8b4513); // Mesa 1
+        crearMueble(3.5, 2, 0.2, -5, -4, 0x333333, true); // TV sobre Mesa 1
         
-        const cuerpo = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 0.8), new THREE.MeshStandardMaterial({color: 0x555555}));
-        cuerpo.position.y = 1;
+        crearMueble(4, 1.5, 2, 5, -5, 0x8b4513);  // Mesa 2
+        crearMueble(3.5, 2, 0.2, 5, -4, 0x333333, true);  // TV sobre Mesa 2
+
+        crearMueble(8, 4, 1, 0, -9, 0x555555);   // Estante grande al fondo
+
+        // EL ROBOT
+        const robot = new THREE.Group();
+        const cuerpo = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1, 0.6), new THREE.MeshStandardMaterial({color: 0x777777}));
+        cuerpo.position.y = 0.5;
         robot.add(cuerpo);
-
-        const cabeza = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.6), new THREE.MeshStandardMaterial({color: 0x999999}));
-        cabeza.position.y = 1.9;
+        const cabeza = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.4), new THREE.MeshStandardMaterial({color: 0xaaaaaa}));
+        cabeza.position.y = 1.2;
         robot.add(cabeza);
-
-        const ojo = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x00ffff}));
-        ojo.position.set(0, 1.9, 0.3);
+        const ojo = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0xff0000}));
+        ojo.position.set(0, 1.2, 0.2);
         robot.add(ojo);
-
         escena.add(robot);
 
-        // LÓGICA DE MOVIMIENTO
-        let velocidad = 0.05;
-        let angulo = Math.random() * Math.PI * 2; // Dirección aleatoria inicial
+        // MOVIMIENTO DEL ROBOT
+        let velocidad = 0.04;
+        let angulo = Math.random() * Math.PI * 2;
 
-        camara.position.set(0, 10, 15);
+        camara.position.set(0, 12, 18);
         const controles = new OrbitControls(camara, render.domElement);
 
         function animar() {
             requestAnimationFrame(animar);
 
-            // Mover el robot hacia adelante según su ángulo
-            robot.position.x += Math.cos(angulo) * velocidad;
-            robot.position.z += Math.sin(angulo) * velocidad;
-            
-            // Hacer que el robot mire hacia donde camina
-            robot.rotation.y = -angulo + Math.PI/2;
+            let proxX = robot.position.x + Math.cos(angulo) * velocidad;
+            let proxZ = robot.position.z + Math.sin(angulo) * velocidad;
 
-            // DETECCIÓN DE PAREDES Y ABISMO (Límites en 9.5 para no traspasar)
-            if (robot.position.x > 9.5 || robot.position.x < -9.5 || robot.position.z > 9.5 || robot.position.z < -9.5) {
-                // Si toca el borde, elige una nueva dirección aleatoria
-                angulo = Math.random() * Math.PI * 2;
-                
-                // Rebotar un poco hacia adentro para no quedarse trabado
-                robot.position.x = Math.max(-9.4, Math.min(9.4, robot.position.x));
-                robot.position.z = Math.max(-9.4, Math.min(9.4, robot.position.z));
+            // Revisar si la próxima posición choca con bordes o muebles
+            let choca = false;
+
+            // Bordes del suelo
+            if (proxX > 9.5 || proxX < -9.5 || proxZ > 9.5 || proxZ < -9.5) choca = true;
+
+            // Muebles
+            obstaculos.forEach(obs => {
+                if (proxX > obs.xMin && proxX < obs.xMax && proxZ > obs.zMin && proxZ < obs.zMax) {
+                    choca = true;
+                }
+            });
+
+            if (choca) {
+                angulo += Math.PI / 2 + (Math.random() * 0.5); // Gira si hay obstáculo
+            } else {
+                robot.position.x = proxX;
+                robot.position.z = proxZ;
+                robot.rotation.y = -angulo + Math.PI/2;
             }
 
             controles.update();
