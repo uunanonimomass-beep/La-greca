@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Greca 3D</title>
+    <title>La Greca 3D - Tienda</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
-        #instrucciones { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-family: sans-serif; pointer-events: none; }
+        #instrucciones { position: absolute; top: 10px; width: 100%; text-align: center; color: white; font-family: sans-serif; pointer-events: none; z-index: 10; }
     </style>
 </head>
 <body>
-    <div id="instrucciones"><h1>La Greca</h1><p>Cargando tienda 3D...</p></div>
+    <div id="instrucciones"><h1>La Greca</h1><p>Usa tu dedo para explorar la tienda</p></div>
 
     <script type="importmap">
     {
@@ -25,26 +25,57 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+        // CONFIGURACIÓN BÁSICA
         const escena = new THREE.Scene();
         const camara = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const render = new THREE.WebGLRenderer({ antialias: true });
         render.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(render.domElement);
 
-        // Suelo Neón (Rejilla)
-        const rejilla = new THREE.GridHelper(20, 40, 0x00ffff, 0x004444);
-        escena.add(rejilla);
+        // 1. ILUMINACIÓN (Para que se vea lo que vamos a poner)
+        const luzAmbiental = new THREE.AmbientLight(0xffffff, 0.7);
+        escena.add(luzAmbiental);
+        const luzPuntual = new THREE.PointLight(0x00ffff, 1, 50);
+        luzPuntual.position.set(0, 10, 0);
+        escena.add(luzPuntual);
 
-        camara.position.set(0, 5, 10);
+        // 2. EL SUELO (Un plano sólido)
+        const geoSuelo = new THREE.PlaneGeometry(20, 20);
+        const matSuelo = new THREE.MeshStandardMaterial({ color: 0x1a1a1a }); // Gris oscuro
+        const suelo = new THREE.Mesh(geoSuelo, matSuelo);
+        suelo.rotation.x = -Math.PI / 2; // Acostar el suelo
+        escena.add(suelo);
+
+        // 3. LAS PAREDES (Tres planos verticales)
+        const matPared = new THREE.MeshStandardMaterial({ color: 0x050505 }); // Paredes casi negras
+
+        // Pared del fondo
+        const paredFondo = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
+        paredFondo.position.set(0, 5, -10);
+        escena.add(paredFondo);
+
+        // Pared izquierda
+        const paredIzq = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
+        paredIzq.position.set(-10, 5, 0);
+        paredIzq.rotation.y = Math.PI / 2;
+        escena.add(paredIzq);
+
+        // Pared derecha
+        const paredDer = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), matPared);
+        paredDer.position.set(10, 5, 0);
+        paredDer.rotation.y = -Math.PI / 2;
+        escena.add(paredDer);
+
+        // CÁMARA Y CONTROLES
+        camara.position.set(0, 4, 12);
         const controles = new OrbitControls(camara, render.domElement);
+        controles.enableDamping = true;
 
         function animar() {
             requestAnimationFrame(animar);
             controles.update();
             render.render(escena, camara);
         }
-        
-        document.getElementById('instrucciones').innerHTML = "<h1>La Greca</h1><p>Usa tu dedo para girar la cámara</p>";
         animar();
     </script>
 </body>
